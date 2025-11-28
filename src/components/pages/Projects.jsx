@@ -55,7 +55,7 @@ project.title_c?.toLowerCase().includes(search) ||
         project.description_c?.toLowerCase().includes(search)
       );
     }
-}
+
 
     if (statusFilter) {
       filtered = filtered.filter(project => project.status_c === statusFilter);
