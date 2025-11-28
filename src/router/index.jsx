@@ -66,7 +66,7 @@ const routes = [
     path: "/",
     element: <Root />,
     children: [
-      // Auth routes
+      // Auth routes (direct children of Root - higher priority)
       createRoute({
         path: "login",
         element: <Login />
@@ -91,7 +91,7 @@ const routes = [
         path: "reset-password/:appId/:fields", 
         element: <ResetPassword />
       }),
-      // Main app layout
+      // Main app layout (nested routes)
       {
         path: "/",
         element: <Layout />,
@@ -111,13 +111,14 @@ const routes = [
           createRoute({
             path: "timeline",
             element: <Timeline />
-          }),
-          createRoute({
-            path: "*",
-            element: <NotFound />
           })
         ]
-      }
+      },
+      // Catch-all route (moved outside Layout to prevent conflicts)
+      createRoute({
+        path: "*",
+        element: <NotFound />
+      })
     ]
   }
 ];
