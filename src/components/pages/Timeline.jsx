@@ -31,8 +31,8 @@ const Timeline = () => {
       setProjects(projectsData);
       
       // Sort milestones by due date
-      const sortedMilestones = milestonesData.sort((a, b) => 
-        new Date(a.dueDate) - new Date(b.dueDate)
+const sortedMilestones = milestonesData.sort((a, b) => 
+        new Date(a.due_date_c) - new Date(b.due_date_c)
       );
       setFilteredMilestones(sortedMilestones);
     } catch (err) {
@@ -59,7 +59,7 @@ const Timeline = () => {
           filtered = filtered.filter(m => !m.completed);
           break;
         case "overdue":
-          filtered = filtered.filter(m => !m.completed && isPast(new Date(m.dueDate)));
+filtered = filtered.filter(m => !m.completed_c && isPast(new Date(m.due_date_c)));
           break;
         case "today":
           filtered = filtered.filter(m => isToday(new Date(m.dueDate)));
@@ -68,33 +68,32 @@ const Timeline = () => {
     }
 
     // Filter by project
-    if (filterProject) {
+if (filterProject) {
       filtered = filtered.filter(m => m.projectId === parseInt(filterProject));
     }
 
     // Sort by due date
-    filtered.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+filtered.sort((a, b) => new Date(a.due_date_c) - new Date(b.due_date_c));
     
     setFilteredMilestones(filtered);
   }, [milestones, filterStatus, filterProject]);
 
   const getProject = (projectId) => {
-    return projects.find(p => p.Id === projectId);
+return projects.find(p => p.Id === projectId);
   };
 
   const getStatusCounts = () => {
-    const completed = milestones.filter(m => m.completed).length;
-    const pending = milestones.filter(m => !m.completed).length;
-    const overdue = milestones.filter(m => !m.completed && isPast(new Date(m.dueDate))).length;
-    const today = milestones.filter(m => isToday(new Date(m.dueDate))).length;
-    
+const completed = milestones.filter(m => m.completed_c).length;
+    const pending = milestones.filter(m => !m.completed_c).length;
+    const overdue = milestones.filter(m => !m.completed_c && isPast(new Date(m.due_date_c))).length;
+    const today = milestones.filter(m => isToday(new Date(m.due_date_c))).length;
     return { completed, pending, overdue, today };
   };
 
   const statusCounts = getStatusCounts();
-  const projectOptions = projects.map(project => ({
+const projectOptions = projects.map(project => ({
     value: project.Id.toString(),
-    label: project.title
+    label: project.title_c || project.Name
   }));
 
   if (loading) {
@@ -235,9 +234,9 @@ const Timeline = () => {
           <div className="space-y-1">
             {filteredMilestones.map((milestone, index) => (
               <TimelineItem
-                key={milestone.Id}
+key={milestone.Id}
                 milestone={milestone}
-                project={getProject(milestone.projectId)}
+                project={getProject(milestone.project_id_c)}
                 isLast={index === filteredMilestones.length - 1}
               />
             ))}

@@ -6,12 +6,12 @@ import Input from "@/components/atoms/Input";
 import { cn } from "@/utils/cn";
 
 const AddProjectModal = ({ isOpen, onClose, onProjectAdd }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    client: "",
-    status: "pre-production",
-    dueDate: "",
-    description: ""
+const [formData, setFormData] = useState({
+    title_c: "",
+    client_c: "",
+    status_c: "pre-production",
+    due_date_c: "",
+    description_c: ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,12 +37,12 @@ const AddProjectModal = ({ isOpen, onClose, onProjectAdd }) => {
     setIsSubmitting(true);
 
     try {
-      const newProject = {
-        ...formData,
-        title: formData.title.trim(),
-        client: formData.client.trim(),
-        description: formData.description.trim(),
-        createdAt: new Date().toISOString()
+const newProject = {
+        title_c: formData.title_c.trim(),
+        client_c: formData.client_c.trim(),
+        status_c: formData.status_c,
+        due_date_c: formData.due_date_c,
+        description_c: formData.description_c.trim()
       };
 
       await onProjectAdd(newProject);

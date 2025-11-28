@@ -68,14 +68,14 @@ const AssetUpload = ({ onAssetUpload, projectId = null }) => {
 
     try {
       for (const file of validFiles) {
-        const asset = {
-          fileName: file.name,
-          fileType: file.type || "application/octet-stream",
-          fileSize: file.size,
-          projectId: projectId,
-          uploadDate: new Date().toISOString(),
-          thumbnailUrl: null, // In real app, this would be generated
-          tags: []
+const asset = {
+          file_name_c: file.name,
+          file_type_c: file.type || "application/octet-stream",
+          file_size_c: file.size,
+          project_id_c: projectId,
+          thumbnail_url_c: [],
+          file_c: [],
+          Tags: ""
         };
 
         // Simulate file processing delay
@@ -121,7 +121,7 @@ const AssetUpload = ({ onAssetUpload, projectId = null }) => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,video/*,.obj,.fbx,.blend,.max,.gltf,.glb"
+accept="image/*,video/*,.obj,.fbx,.blend,.max,.gltf,.glb"
           onChange={handleFileSelect}
           className="hidden"
           disabled={isUploading}

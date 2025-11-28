@@ -1,87 +1,283 @@
-import assetsData from "@/services/mockData/assets.json";
+import { getApperClient } from '@/services/apperClient';
+import { toast } from 'react-toastify';
 
 class AssetService {
   constructor() {
-    this.assets = this.loadAssets();
-  }
-
-  loadAssets() {
-    const stored = localStorage.getItem("vfx_assets");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    localStorage.setItem("vfx_assets", JSON.stringify(assetsData));
-    return [...assetsData];
-  }
-
-  saveAssets() {
-    localStorage.setItem("vfx_assets", JSON.stringify(this.assets));
+    // Identify lookup fields for proper handling
+    this.lookupFields = ['project_id_c'];
   }
 
   async getAll() {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return [...this.assets];
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const response = await apperClient.fetchRecords('asset_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "Tags"}},
+          {"field": {"Name": "file_name_c"}},
+          {"field": {"Name": "file_type_c"}},
+          {"field": {"Name": "file_size_c"}},
+          {"field": {"Name": "project_id_c"}},
+          {"field": {"Name": "thumbnail_url_c"}},
+          {"field": {"Name": "file_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return [];
+      }
+
+      if (!response?.data?.length) {
+        return [];
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching assets:", error?.response?.data?.message || error);
+      return [];
+    }
   }
 
   async getByProjectId(projectId) {
-    await new Promise(resolve => setTimeout(resolve, 250));
-    return this.assets.filter(asset => asset.projectId === parseInt(projectId));
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const response = await apperClient.fetchRecords('asset_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "Tags"}},
+          {"field": {"Name": "file_name_c"}},
+          {"field": {"Name": "file_type_c"}},
+          {"field": {"Name": "file_size_c"}},
+          {"field": {"Name": "project_id_c"}},
+          {"field": {"Name": "thumbnail_url_c"}},
+          {"field": {"Name": "file_c"}}
+        ],
+        where: [{
+          "FieldName": "project_id_c",
+          "Operator": "EqualTo",
+          "Values": [parseInt(projectId)]
+        }]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return [];
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching assets by project:", error?.response?.data?.message || error);
+      return [];
+    }
   }
 
   async getById(id) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const asset = this.assets.find(a => a.Id === parseInt(id));
-    return asset ? { ...asset } : null;
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const response = await apperClient.getRecordById('asset_c', parseInt(id), {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "Tags"}},
+          {"field": {"Name": "file_name_c"}},
+          {"field": {"Name": "file_type_c"}},
+          {"field": {"Name": "file_size_c"}},
+          {"field": {"Name": "project_id_c"}},
+          {"field": {"Name": "thumbnail_url_c"}},
+          {"field": {"Name": "file_c"}}
+        ]
+      });
+
+      if (!response?.data) {
+        return null;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching asset ${id}:`, error?.response?.data?.message || error);
+      return null;
+    }
+  }
+
+  prepareLookupFields(data) {
+    const prepared = {...data};
+    this.lookupFields.forEach(fieldName => {
+      if (prepared[fieldName] !== undefined && prepared[fieldName] !== null) {
+        // Handle both object and direct ID inputs
+        prepared[fieldName] = prepared[fieldName]?.Id || parseInt(prepared[fieldName]);
+      }
+    });
+    return prepared;
   }
 
   async create(assetData) {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const maxId = this.assets.reduce((max, asset) => 
-      Math.max(max, asset.Id), 0
-    );
-    
-    const newAsset = {
-      Id: maxId + 1,
-      ...assetData,
-      uploadDate: assetData.uploadDate || new Date().toISOString()
-    };
-    
-    this.assets.push(newAsset);
-    this.saveAssets();
-    
-    return { ...newAsset };
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      // Prepare lookup fields
+      const preparedData = this.prepareLookupFields(assetData);
+
+      const params = {
+        records: [{
+          Name: preparedData.file_name_c || preparedData.fileName,
+          Tags: preparedData.Tags || "",
+          file_name_c: preparedData.file_name_c || preparedData.fileName,
+          file_type_c: preparedData.file_type_c || preparedData.fileType,
+          file_size_c: preparedData.file_size_c || preparedData.fileSize,
+          project_id_c: preparedData.project_id_c || preparedData.projectId,
+          thumbnail_url_c: preparedData.thumbnail_url_c || [],
+          file_c: preparedData.file_c || []
+        }]
+      };
+
+      const response = await apperClient.createRecord('asset_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} assets:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Asset created successfully');
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error creating asset:", error?.response?.data?.message || error);
+      return null;
+    }
   }
 
   async update(id, assetData) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const index = this.assets.findIndex(a => a.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Asset not found");
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      // Prepare lookup fields
+      const preparedData = this.prepareLookupFields(assetData);
+
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          Name: preparedData.file_name_c || preparedData.fileName,
+          Tags: preparedData.Tags || "",
+          file_name_c: preparedData.file_name_c || preparedData.fileName,
+          file_type_c: preparedData.file_type_c || preparedData.fileType,
+          file_size_c: preparedData.file_size_c || preparedData.fileSize,
+          project_id_c: preparedData.project_id_c || preparedData.projectId
+        }]
+      };
+
+      const response = await apperClient.updateRecord('asset_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} assets:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Asset updated successfully');
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error updating asset:", error?.response?.data?.message || error);
+      return null;
     }
-    
-    this.assets[index] = {
-      ...this.assets[index],
-      ...assetData
-    };
-    
-    this.saveAssets();
-    return { ...this.assets[index] };
   }
 
   async delete(id) {
-    await new Promise(resolve => setTimeout(resolve, 250));
-    
-    const index = this.assets.findIndex(a => a.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Asset not found");
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const params = {
+        RecordIds: [parseInt(id)]
+      };
+
+      const response = await apperClient.deleteRecord('asset_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return false;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} assets:`, failed);
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Asset deleted successfully');
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error deleting asset:", error?.response?.data?.message || error);
+      return false;
     }
-    
-    this.assets.splice(index, 1);
-    this.saveAssets();
-    
-    return true;
   }
 }
 

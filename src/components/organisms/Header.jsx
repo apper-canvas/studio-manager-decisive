@@ -1,4 +1,6 @@
-import { useLocation } from "react-router-dom";
+import { useLocation } from 'react-router-dom'
+import { useAuth } from '@/layouts/Root'
+import Button from '@/components/atoms/Button'
 import ApperIcon from "@/components/ApperIcon";
 
 const Header = ({ onMenuToggle }) => {

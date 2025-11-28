@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import projectService from "@/services/api/projectService";
 import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import SearchBar from "@/components/molecules/SearchBar";
-import ProjectCard from "@/components/molecules/ProjectCard";
-import AddProjectModal from "@/components/organisms/AddProjectModal";
 import Loading from "@/components/ui/Loading";
 import ErrorView from "@/components/ui/ErrorView";
 import Empty from "@/components/ui/Empty";
-import projectService from "@/services/api/projectService";
+import Button from "@/components/atoms/Button";
+import AddProjectModal from "@/components/organisms/AddProjectModal";
+import SearchBar from "@/components/molecules/SearchBar";
+import ProjectCard from "@/components/molecules/ProjectCard";
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -50,39 +50,41 @@ const Projects = () => {
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(project =>
-        project.title.toLowerCase().includes(search) ||
-        project.client.toLowerCase().includes(search) ||
-        project.description?.toLowerCase().includes(search)
+project.title_c?.toLowerCase().includes(search) ||
+        project.client_c?.toLowerCase().includes(search) ||
+        project.description_c?.toLowerCase().includes(search)
       );
     }
+}
 
     if (statusFilter) {
-      filtered = filtered.filter(project => project.status === statusFilter);
+      filtered = filtered.filter(project => project.status_c === statusFilter);
     }
-
     setFilteredProjects(filtered);
   }, [projects, searchTerm, statusFilter]);
 
-  const handleAddProject = async (projectData) => {
+const handleAddProject = async (projectData) => {
     try {
       const newProject = await projectService.create(projectData);
       setProjects(prev => [newProject, ...prev]);
+      toast.success("Project created successfully");
     } catch (error) {
+      toast.error("Failed to create project");
       throw error;
     }
   };
-
   const handleEditProject = (project) => {
     toast.info("Edit functionality coming soon!");
   };
 
-  const handleDeleteProject = async (project) => {
-    if (window.confirm(`Are you sure you want to delete "${project.title}"?`)) {
+const handleDeleteProject = async (project) => {
+    if (window.confirm(`Are you sure you want to delete "${project.title_c || project.Name}"?`)) {
       try {
         await projectService.delete(project.Id);
         setProjects(prev => prev.filter(p => p.Id !== project.Id));
         toast.success("Project deleted successfully");
       } catch (error) {
+        console.error("Error deleting project:", error);
         toast.error("Failed to delete project");
       }
     }
@@ -152,7 +154,7 @@ const Projects = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
             <ProjectCard
-              key={project.Id}
+key={project.Id}
               project={project}
               onEdit={handleEditProject}
               onDelete={handleDeleteProject}

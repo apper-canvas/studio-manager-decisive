@@ -1,82 +1,221 @@
-import projectsData from "@/services/mockData/projects.json";
+import { getApperClient } from '@/services/apperClient';
+import { toast } from 'react-toastify';
 
 class ProjectService {
-  constructor() {
-    this.projects = this.loadProjects();
-  }
-
-  loadProjects() {
-    const stored = localStorage.getItem("vfx_projects");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    localStorage.setItem("vfx_projects", JSON.stringify(projectsData));
-    return [...projectsData];
-  }
-
-  saveProjects() {
-    localStorage.setItem("vfx_projects", JSON.stringify(this.projects));
-  }
-
   async getAll() {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return [...this.projects];
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const response = await apperClient.fetchRecords('project_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "Tags"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "client_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "due_date_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ],
+        orderBy: [{"fieldName": "CreatedOn", "sorttype": "DESC"}]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return [];
+      }
+
+      if (!response?.data?.length) {
+        return [];
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching projects:", error?.response?.data?.message || error);
+      return [];
+    }
   }
 
   async getById(id) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const project = this.projects.find(p => p.Id === parseInt(id));
-    return project ? { ...project } : null;
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const response = await apperClient.getRecordById('project_c', parseInt(id), {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "Tags"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "client_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "due_date_c"}},
+          {"field": {"Name": "description_c"}}
+        ]
+      });
+
+      if (!response?.data) {
+        return null;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching project ${id}:`, error?.response?.data?.message || error);
+      return null;
+    }
   }
 
   async create(projectData) {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const maxId = this.projects.reduce((max, project) => 
-      Math.max(max, project.Id), 0
-    );
-    
-    const newProject = {
-      Id: maxId + 1,
-      ...projectData,
-      createdAt: projectData.createdAt || new Date().toISOString()
-    };
-    
-    this.projects.push(newProject);
-    this.saveProjects();
-    
-    return { ...newProject };
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const params = {
+        records: [{
+          Name: projectData.title_c || projectData.title,
+          Tags: projectData.Tags || "",
+          title_c: projectData.title_c || projectData.title,
+          client_c: projectData.client_c || projectData.client,
+          status_c: projectData.status_c || projectData.status,
+          due_date_c: projectData.due_date_c || projectData.dueDate,
+          description_c: projectData.description_c || projectData.description
+        }]
+      };
+
+      const response = await apperClient.createRecord('project_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} projects:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Project created successfully');
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error creating project:", error?.response?.data?.message || error);
+      return null;
+    }
   }
 
   async update(id, projectData) {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const index = this.projects.findIndex(p => p.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Project not found");
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          Name: projectData.title_c || projectData.title,
+          Tags: projectData.Tags || "",
+          title_c: projectData.title_c || projectData.title,
+          client_c: projectData.client_c || projectData.client,
+          status_c: projectData.status_c || projectData.status,
+          due_date_c: projectData.due_date_c || projectData.dueDate,
+          description_c: projectData.description_c || projectData.description
+        }]
+      };
+
+      const response = await apperClient.updateRecord('project_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} projects:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Project updated successfully');
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error updating project:", error?.response?.data?.message || error);
+      return null;
     }
-    
-    this.projects[index] = {
-      ...this.projects[index],
-      ...projectData
-    };
-    
-    this.saveProjects();
-    return { ...this.projects[index] };
   }
 
   async delete(id) {
-    await new Promise(resolve => setTimeout(resolve, 250));
-    
-    const index = this.projects.findIndex(p => p.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Project not found");
+    try {
+      const apperClient = getApperClient();
+      if (!apperClient) {
+        throw new Error("ApperClient not initialized");
+      }
+
+      const params = {
+        RecordIds: [parseInt(id)]
+      };
+
+      const response = await apperClient.deleteRecord('project_c', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return false;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} projects:`, failed);
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message);
+          });
+        }
+
+        if (successful.length > 0) {
+          toast.success('Project deleted successfully');
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error deleting project:", error?.response?.data?.message || error);
+      return false;
     }
-    
-    this.projects.splice(index, 1);
-    this.saveProjects();
-    
-    return true;
   }
 }
 

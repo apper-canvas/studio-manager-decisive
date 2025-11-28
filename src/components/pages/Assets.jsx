@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import ApperFileFieldComponent from "@/components/atoms/FileUploader/ApperFileFieldComponent";
+import assetService from "@/services/api/assetService";
+import projectService from "@/services/api/projectService";
 import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import SearchBar from "@/components/molecules/SearchBar";
-import AssetCard from "@/components/molecules/AssetCard";
-import AssetUpload from "@/components/organisms/AssetUpload";
 import Loading from "@/components/ui/Loading";
 import ErrorView from "@/components/ui/ErrorView";
 import Empty from "@/components/ui/Empty";
-import assetService from "@/services/api/assetService";
-import projectService from "@/services/api/projectService";
+import Button from "@/components/atoms/Button";
+import AssetUpload from "@/components/organisms/AssetUpload";
+import Projects from "@/components/pages/Projects";
+import SearchBar from "@/components/molecules/SearchBar";
+import AssetCard from "@/components/molecules/AssetCard";
 
 const Assets = () => {
   const [assets, setAssets] = useState([]);
@@ -58,13 +60,13 @@ const Assets = () => {
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(asset =>
-        asset.fileName.toLowerCase().includes(search) ||
-        asset.tags?.some(tag => tag.toLowerCase().includes(search))
+asset.file_name_c?.toLowerCase().includes(search) ||
+        asset.Tags?.toLowerCase().includes(search)
       );
     }
 
     if (typeFilter) {
-      filtered = filtered.filter(asset => {
+filtered = filtered.filter(asset => {
         const type = asset.fileType?.toLowerCase() || "";
         switch (typeFilter) {
           case "image":
@@ -82,14 +84,14 @@ const Assets = () => {
     }
 
     if (projectFilter) {
-      filtered = filtered.filter(asset => asset.projectId === parseInt(projectFilter));
+filtered = filtered.filter(asset => asset.project_id_c === parseInt(projectFilter));
     }
 
     setFilteredAssets(filtered);
   }, [assets, searchTerm, typeFilter, projectFilter]);
 
   const handleAssetUpload = async (assetData) => {
-    try {
+try {
       const newAsset = await assetService.create(assetData);
       setAssets(prev => [newAsset, ...prev]);
     } catch (error) {
@@ -103,7 +105,7 @@ const Assets = () => {
 
   const handleDeleteAsset = async (asset) => {
     if (window.confirm(`Are you sure you want to delete "${asset.fileName}"?`)) {
-      try {
+try {
         await assetService.delete(asset.Id);
         setAssets(prev => prev.filter(a => a.Id !== asset.Id));
         toast.success("Asset deleted successfully");
@@ -113,14 +115,14 @@ const Assets = () => {
     }
   };
 
-  const getProjectName = (projectId) => {
+const getProjectName = (projectId) => {
     const project = projects.find(p => p.Id === projectId);
-    return project?.title || "Unknown Project";
+    return project ? (project.title_c || project.Name) : "Unknown Project";
   };
 
-  const projectOptions = projects.map(project => ({
+const projectOptions = projects.map(project => ({
     value: project.Id.toString(),
-    label: project.title
+    label: project.title_c || project.Name
   }));
 
   if (loading) {
@@ -177,7 +179,7 @@ const Assets = () => {
       {/* Upload Section */}
       {showUpload && (
         <div className="bg-surface rounded-lg p-6 border border-slate-700">
-          <AssetUpload onAssetUpload={handleAssetUpload} />
+<AssetUpload onAssetUpload={handleAssetUpload} />
         </div>
       )}
 
@@ -251,19 +253,19 @@ const Assets = () => {
           : "space-y-4"
         }>
           {filteredAssets.map((asset) => (
-            <div key={asset.Id}>
+<div key={asset.Id}>
               {viewMode === "list" ? (
                 <div className="bg-surface rounded-lg p-4 flex items-center space-x-4 hover:bg-slate-700/50 transition-colors duration-200">
                   <div className="w-12 h-12 bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
                     <ApperIcon 
-                      name={asset.fileType?.includes("image") ? "Image" : asset.fileType?.includes("video") ? "Video" : "File"} 
+                      name={asset.file_type_c?.includes("image") ? "Image" : asset.file_type_c?.includes("video") ? "Video" : "File"} 
                       size={24} 
                       className="text-slate-400" 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-slate-100 truncate">{asset.fileName}</h4>
-                    <p className="text-sm text-slate-400">{getProjectName(asset.projectId)}</p>
+                    <h4 className="font-medium text-slate-100 truncate">{asset.file_name_c}</h4>
+                    <p className="text-sm text-slate-400">{getProjectName(asset.project_id_c)}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => handleViewAsset(asset)}>
@@ -275,7 +277,7 @@ const Assets = () => {
                   </div>
                 </div>
               ) : (
-                <AssetCard
+<AssetCard
                   asset={asset}
                   onView={handleViewAsset}
                   onDelete={handleDeleteAsset}

@@ -30,14 +30,14 @@ const handleSubmit = async (e) => {
 
     try {
       // Initialize ApperClient
-      const { ApperClient } = window.ApperSDK;
+const { ApperClient } = window.ApperSDK;
       const apperClient = new ApperClient({
         apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
 
       // Invoke OpenAI edge function
-      const result = await apperClient.functions.invoke(import.meta.env.VITE_OPENAI, {
+const result = await apperClient.functions.invoke(import.meta.env.VITE_OPENAI, {
         body: JSON.stringify({
           prompt: prompt.trim(),
           type: chatType,
@@ -90,7 +90,7 @@ const handleSubmit = async (e) => {
     try {
       // Initialize ApperClient
       const { ApperClient } = window.ApperSDK;
-      const apperClient = new ApperClient({
+const apperClient = new ApperClient({
         apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
@@ -100,7 +100,7 @@ const handleSubmit = async (e) => {
       formData.append('image', file);
 
       // Invoke upload-large-image edge function
-      const result = await apperClient.functions.invoke(import.meta.env.VITE_UPLOAD_LARGE_IMAGE, {
+const result = await apperClient.functions.invoke(import.meta.env.VITE_UPLOAD_LARGE_IMAGE, {
         body: formData,
         headers: {
           // Don't set Content-Type header - let browser set it with boundary for FormData
@@ -148,14 +148,14 @@ const chatTypeOptions = [
     setGeneratedImage('');
     
     try {
-      const { ApperClient } = window.ApperSDK;
+const { ApperClient } = window.ApperSDK;
       const apperClient = new ApperClient({
         apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
         apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
       });
 
       const result = await apperClient.functions.invoke(import.meta.env.VITE_TEXT_TO_IMAGE, {
-        body: JSON.stringify({
+body: JSON.stringify({
           prompt: prompt.trim(),
           width: 1024,
           height: 1024
